@@ -49,17 +49,31 @@ func ByUID(uid int) (Last, error) {
 	return FromFile(Log, uid)
 }
 
+// ByUser returns last system login of speciefed User
+func ByUser(u *user.User) (Last, error) {
+	uid, err := strconv.Atoi(u.Uid)
+	if err != nil {
+		return Last{}, err
+	}
+	return FromFile(Log, uid)
+}
+
 // Current returns last login of current user
 func Current() (Last, error) {
 	cur, err := user.Current()
 	if err != nil {
 		return Last{}, err
 	}
-	uid, err := strconv.Atoi(cur.Uid)
+	return ByUser(cur)
+}
+
+// Username returns last login by username
+func Username(name string) (Last, error) {
+	u, err := user.Lookup(name)
 	if err != nil {
 		return Last{}, err
 	}
-	return FromFile(Log, uid)
+	return ByUser(u)
 }
 
 // FromFile returns last login of user by UID from specified file
