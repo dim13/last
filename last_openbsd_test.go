@@ -6,7 +6,7 @@ import (
 )
 
 func TestLast(t *testing.T) {
-	l, err := FromFile("lastlog", 1000)
+	l, err := FromFile("test/lastlog", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,11 +22,11 @@ func TestLast(t *testing.T) {
 }
 
 func TestSeek(t *testing.T) {
-	_, err := FromFile("lastlog", -1)
+	_, err := FromFile("test/lastlog", -1)
 	if err == nil {
 		t.Error("expected error")
 	}
-	_, err = FromFile("lastlog", 65535)
+	_, err = FromFile("test/lastlog", 65535)
 	if err == nil {
 		t.Error("expected error")
 	}

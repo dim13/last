@@ -2,8 +2,6 @@
 // Use of this source code is governed by ISC-style license
 // that can be found in the LICENSE file.
 
-// +build !windows
-
 // Package last implements parser of lastlog file on UNIX systems
 package last
 
