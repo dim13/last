@@ -5,99 +5,60 @@
 // Package last implements parser of lastlog file on UNIX systems
 package last
 
+/*
+#include <fcntl.h>
+#include <utmp.h>
+
+time_t
+last(int uid)
+{
+	struct lastlog ll = {};
+	off_t pos = (off_t)uid * sizeof(ll);
+	int fd = open(_PATH_LASTLOG, O_RDONLY, 0);
+	if (fd >= 0) {
+		pread(fd, &ll, sizeof(ll), pos);
+		close(fd);
+	}
+	return ll.ll_time;
+}
+*/
+import "C"
+
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
-	"io"
-	"os"
 	"os/user"
 	"strconv"
 	"time"
 )
 
-// Log is system lastlog file
-const Log = "/var/log/lastlog"
-
-// Last login information
-type Last struct {
-	Time time.Time
-	Line string
-	Host string
-}
-
-func (l Last) String() string {
-	return fmt.Sprintf("Last login: %v on %v from %v",
-		l.Time.Format(time.UnixDate), l.Line, l.Host)
-}
-
-// Since retuns time passed sine last login
-func (l Last) Since() time.Duration {
-	return time.Since(l.Time)
-}
-
 // ByUID returns last system login of user by UID
-func ByUID(uid int) (Last, error) {
-	return FromFile(Log, uid)
+func ByUID(uid int) (time.Time, error) {
+	t := C.last(C.int(uid))
+	return time.Unix(int64(t), 0), nil
 }
 
 // ByUser returns last system login of speciefed User
-func ByUser(u *user.User) (Last, error) {
+func ByUser(u *user.User) (time.Time, error) {
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return Last{}, err
+		return time.Time{}, err
 	}
-	return FromFile(Log, uid)
+	return ByUID(uid)
 }
 
 // Current returns last login of current user
-func Current() (Last, error) {
+func Current() (time.Time, error) {
 	cur, err := user.Current()
 	if err != nil {
-		return Last{}, err
+		return time.Time{}, err
 	}
 	return ByUser(cur)
 }
 
 // Username returns last login by username
-func Username(name string) (Last, error) {
+func Username(name string) (time.Time, error) {
 	u, err := user.Lookup(name)
 	if err != nil {
-		return Last{}, err
+		return time.Time{}, err
 	}
 	return ByUser(u)
-}
-
-// FromFile returns last login of user by UID from specified file
-func FromFile(lastlog string, uid int) (Last, error) {
-	f, err := os.Open(lastlog)
-	if err != nil {
-		return Last{}, err
-	}
-	defer f.Close()
-	entrySize := timeSize + lineSize + hostSize
-	if _, err := f.Seek(int64(uid*entrySize), io.SeekStart); err != nil {
-		return Last{}, err
-	}
-	buf := make([]byte, entrySize)
-	if _, err := f.Read(buf); err != nil {
-		return Last{}, err
-	}
-	t := binary.LittleEndian.Uint64(buf[:timeSize])
-	if t == 0 {
-		return Last{}, fmt.Errorf("Never logged in")
-	}
-	l := Last{
-		Time: time.Unix(int64(t), 0),
-		Line: trim(buf[timeSize : timeSize+lineSize]),
-		Host: trim(buf[timeSize+lineSize:]),
-	}
-	return l, nil
-}
-
-func trim(b []byte) string {
-	if i := bytes.IndexByte(b, 0); i >= 0 {
-		b = b[:i]
-	}
-	return string(b)
 }
