@@ -8,6 +8,7 @@ package last
 /*
 #include <fcntl.h>
 #include <utmp.h>
+#include <unistd.h>
 
 time_t
 last(int uid)
