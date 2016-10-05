@@ -26,14 +26,20 @@ last(int uid)
 import "C"
 
 import (
+	"errors"
 	"os/user"
 	"strconv"
 	"time"
 )
 
+var ErrNever = errors.New("never logged in")
+
 // ByUID returns last system login of user by UID
 func ByUID(uid int) (time.Time, error) {
 	t := C.last(C.int(uid))
+	if t == 0 {
+		return time.Time{}, ErrNever
+	}
 	return time.Unix(int64(t), 0), nil
 }
 
