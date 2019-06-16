@@ -1,5 +1,3 @@
 language: go
-sudo: false
 go:
-  - 1.7.1
-  - tip
+  - 1.x
